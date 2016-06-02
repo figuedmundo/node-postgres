@@ -26,7 +26,6 @@ function getWayToTarget(req, res, next) {
         console.log("DATA:", data);
     })
         .catch(function (error) {
-        // error;
         console.log("ERROR:", error);
     }); 
 }
