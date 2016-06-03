@@ -8,7 +8,7 @@ var router = express.Router();
 
 var db = require('../queries');
 
-router.get('/api/way/:target', db.getWayToTarget);
+router.get('/api/way/:source/:target', db.getWayToTarget);
 
 module.exports = router;
 
