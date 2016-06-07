@@ -21,72 +21,78 @@ function getWayToTarget(req, res, next) {
                 "FROM pgr_dijkstra('SELECT gid AS id, source::integer, target::integer, st_length(geom) AS cost " + 
                 "                   FROM public.ways', $1, $2, false, false);";
     
-    console.log("QUERY: ", query);
-    db.any(query, [sourceId, targetId])
+    // console.log("QUERY: ", query);
+    var promiseQuery = db.any(query, [sourceId, targetId])
         .then(function (data) {
-        console.log("DATA:", data);
-        
-        console.log(typeof(data));
-        console.log(data.length);
-        
-        var ways = [];
-        var features = [];
-        
-        for (var index = 0; index < data.length; index++) {
-            var edge = data[index].edge;
+            console.log("DATA:", data);
             
-            ways.push(edge);
+            var ways = [];
+            var features = [];
+            
+            for (var index = 0; index < data.length; index++) {
+                var edge = data[index].edge;
+                
+                ways.push(edge);
+                console.log(features);
+                
+                var feature = getLinestringFromDb(edge);
+                
+                features[index] = feature;
+                console.log(feature);
+            }
+            
+            console.log("***********COLLECTION***********");
             console.log(features);
             
-            
-            var wayGeomQuery = "select ST_AsGeoJSON(ST_Transform(geom, 4326)) from ways where gid = $1;"
-            // console.log(wayGeomQuery);
-            if (edge < 0)
-                return;
-                        
-            db.any(wayGeomQuery, data[index].edge)
+            var collection = {
+                type: "FeatureCollection",
+                features: features
+            };
+            console.log(collection);
+            var geoJsonToGM = JSON.stringify(collection, null, 2);
+            console.log(geoJsonToGM);
+            return geoJsonToGM;
+           //res.send(geoJsonToGM);
+        
+        })
+        .then(function(json) {
+           res.status(200).send(json);
+        })
+        .catch(function (error) {
+            console.log(" -- ERROR:", error);
+         }); 
+    
+    
+
+               
+   
+}
+
+function getLinestringFromDb(edgeId) {
+    
+    var wayGeomQuery = "select ST_AsGeoJSON(ST_Transform(geom, 4326)) from ways where gid = $1;";
+    
+    var res = {};
+    
+    var promiseQuery = db.any(wayGeomQuery, edgeId)
                 .then(function (data) {
                     // console.log(data); 
-                    //[ { st_asgeojson: '{"type":"LineString","coordinates":[[-66.1457026734889,-17.393341512891],[-66.1456500839385,-17.3935635696337],[-66.1456284778488,-17.3937148122613]]}' } ]
-                    
                     var feature = {
                         type: "Feature",
                         geometry: JSON.parse(data[0].st_asgeojson)
                     };
-                       
-                    console.log(JSON.stringify(feature));
                     
-                    features.push(feature); 
-                    //return feature;
+                    
+                    res = feature;      
+                    console.log(JSON.stringify(feature));
+                                         
+                    return feature;
+                })
+                .then(function(json) {
+                    res.send(json);
                 });
-            
-        };
-        
-        console.log("***********COLLECTION***********");
-        console.log(features);
-        
-        var collection = {
-            type: "FeatureCollection",
-            features: features
-        };
-        
-        console.log(collection);
-        
-        var geoJsonToGM = JSON.stringify(collection, null, 2);
-        
-        console.log(geoJsonToGM);
-        
-        return geoJsonToGM;
-        
-        })
-        .catch(function (error) {
-        console.log(" -- ERROR:", error);
-        
-    }); 
-    
-    
-    
-    
+                
+    return res;
 }
 
 

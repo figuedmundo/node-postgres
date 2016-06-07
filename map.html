@@ -45,9 +45,3 @@
   </body>
 </html>
 
-
-point_source = FACTORY.point(lon_source, lat_source).projection
-point_target = FACTORY.point(lon_target, lat_target).projection
-connection = Way.connection
-source_vertice = connection.select_value("select find_nearest_node_within_distance( '#{point_source.to_s}' , 100.0, 'ways' )")
-target_vertice = connection.select_value("select find_nearest_node_within_distance( '#{point_target.to_s}' , 100.0, 'ways' )")
